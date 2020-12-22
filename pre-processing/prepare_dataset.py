@@ -1,13 +1,17 @@
 import numpy as np
 import pylidc as pl
 import os
+import warnings
 from statistics import median_high
 from utils import segment_lung
 from pylidc.utils import consensus
 import multiprocessing
+import psutil
 
+warnings.filterwarnings("ignore")
 
-LIDC_FOLDER = "/home/joe/PycharmProjects/dissertation/ct_scans/LIDC-IDRI"
+LIDC_FOLDER = "/media/joe/16657094/LIDC-IDRI"
+
 
 def calculate_malignancy(nodule):
     list_of_malignancy = [ann.malignancy for ann in nodule]
@@ -33,29 +37,37 @@ def munge_lung(lung):
             for lung_slice in range(mask.shape[2]):
                 if np.sum(mask[:, :, lung_slice]) <= 8:
                     continue
-                lung_segmented_np_array = segment_lung(lung_np_array[:, :, lung_slice])
+                l = lung_np_array[:, :, lung_slice].astype('float64')
+                lung_segmented_np_array = segment_lung(l)
                 lung_segmented_np_array[lung_segmented_np_array == -0] = 0
+
+                lung_file = np.array([
+                    l,
+                    lung_segmented_np_array,
+                    nodule[index].bbox(),
+                    malignancy,
+                    cancer_label
+                ])
 
                 if not os.path.exists(f'./data/Image/{lung}/'):
                     os.makedirs(f'./data/Image/{lung}/')
 
-                np.save(f"./data/Image/{lung}/lung_slice{lung_slice}", lung_segmented_np_array)
+                np.save(f"./data/Image/{lung}/lung_slice{lung_slice}", lung_file, allow_pickle=True)
+
+
+def limit_cpu():
+    """is called at every process start"""
+    p = psutil.Process(os.getpid())
+    # set to lowest priority, this is windows only, on Unix use ps.nice(19)
+    p.nice(19)
+
 
 
 if __name__ == '__main__':
-    LIDC_IDRI_list = [f for f in os.listdir(LIDC_FOLDER) if not f.startswith('.')]
+    LIDC_IDRI_list = [f for f in os.listdir(LIDC_FOLDER) if not f.startswith('.')][30:200]
     LIDC_IDRI_list.sort()
     print("Number of cpu : ", multiprocessing.cpu_count())
 
-    procs = []
+    pool = multiprocessing.Pool(None, limit_cpu)
+    results = pool.map(munge_lung, LIDC_IDRI_list)
 
-    # instantiating process with arguments
-    for lung in LIDC_IDRI_list:
-        # print(name)
-        proc = multiprocessing.Process(target=munge_lung, args=(lung,))
-        procs.append(proc)
-        proc.start()
-
-    # complete the processes
-    for proc in procs:
-        proc.join()

@@ -1,13 +1,11 @@
-import os
-import numpy as np
 from medpy.filter.smoothing import anisotropic_diffusion
 from scipy.ndimage import median_filter
 from skimage import measure, morphology
 from sklearn.cluster import KMeans
+import numpy as np
 
 
-
-def mean_filter(img):
+def mean_filter(img: np.ndarray):
     mean = np.mean(img)
     std_dev = np.std(img)
 
@@ -63,7 +61,6 @@ def k_means_filter(img):
 
 
 def segment_lung(lung):
-
     lung = mean_filter(lung)
     lung = middle_filter(lung)
     lung = median_filter(lung, size=3)
@@ -75,3 +72,5 @@ def segment_lung(lung):
 
 def count_params(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
