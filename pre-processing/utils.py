@@ -1,8 +1,19 @@
+import os
+import sys
+
 from medpy.filter.smoothing import anisotropic_diffusion
 from scipy.ndimage import median_filter
 from skimage import measure, morphology
 from sklearn.cluster import KMeans
 import numpy as np
+
+
+def block_print():
+    sys.stdout = open(os.devnull, 'w')
+
+# Restore
+def enable_print():
+    sys.stdout = sys.__stdout__
 
 
 def mean_filter(img: np.ndarray):

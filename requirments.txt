@@ -6,3 +6,5 @@ sklearn~=0.0
 scikit-learn~=0.23.2
 matplotlib~=3.3.3
 pylidc~=0.2.2
+psutil~=5.8.0
+rich~=9.5.1
