@@ -203,3 +203,5 @@ fabric.properties
 data/
 
 pre-processing/data
+.idea/DeepTumour.iml
+.idea/misc.xml
