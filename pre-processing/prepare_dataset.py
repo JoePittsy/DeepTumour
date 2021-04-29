@@ -20,7 +20,7 @@ def calculate_malignancy(nodule):
     return malignancy, cancer
 
 
-def munge_lung(lung):
+def munge_lung(lung: str):
     scan = pl.query(pl.Scan).filter(pl.Scan.patient_id == lung).first()
     print()
     nodules_annotation = scan.cluster_annotations()
@@ -29,10 +29,10 @@ def munge_lung(lung):
 
     if len(nodules_annotation) > 0:
         for index, nodule in enumerate(nodules_annotation):
+            print(nodule)
             mask, cbbox, masks = consensus(nodule, 0.5, 512)
             lung_np_array = vol[cbbox]
             malignancy, cancer_label = calculate_malignancy(nodule)
-            print(malignancy, cancer_label)
 
             for lung_slice in range(mask.shape[2]):
                 if np.sum(mask[:, :, lung_slice]) <= 8:
@@ -62,12 +62,10 @@ def limit_cpu():
     p.nice(19)
 
 
-
 if __name__ == '__main__':
-    LIDC_IDRI_list = [f for f in os.listdir(LIDC_FOLDER) if not f.startswith('.')][30:200]
+    LIDC_IDRI_list = [f for f in os.listdir(LIDC_FOLDER) if not f.startswith('.')]
     LIDC_IDRI_list.sort()
     print("Number of cpu : ", multiprocessing.cpu_count())
 
     pool = multiprocessing.Pool(None, limit_cpu)
     results = pool.map(munge_lung, LIDC_IDRI_list)
-

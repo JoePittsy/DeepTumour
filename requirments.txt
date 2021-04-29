@@ -10,6 +10,6 @@ psutil~=5.8.0
 imageio~=2.9.0
 h5py
 opencv-python
-
+seaborn
 rasterio~=1.2.0
 Shapely~=1.7.1

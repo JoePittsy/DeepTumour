@@ -1,29 +1,36 @@
+import pickle
 import random
-from statistics import median_high
-
 import pylidc as pl
-from collections import defaultdict
-
 from utils import *
 
 LIDC_FOLDER = "/media/joe/16657094/LIDC-IDRI"
 
 
-def calculate_malignancy(nodule):
-    list_of_malignancy = [ann.diameter for ann in nodule]
-    malignancy = np.mean(list_of_malignancy)
-    if malignancy >= 50:
-        malignancy = "5"
-    elif malignancy >= 40:
-        malignancy = "4"
-    elif malignancy >= 30:
-        malignancy = "3"
-    elif malignancy >= 20:
-        malignancy = "2"
-    else:
-        malignancy = "1"
+def calculate_label(nodule, width, height):
+    list_of_subtlety = [ann.subtlety for ann in nodule]
+    subtlety = np.mean(list_of_subtlety)
 
-    return malignancy
+    list_of_lobulation = [ann.lobulation for ann in nodule]
+    lobulation = np.mean(list_of_lobulation)
+
+    list_of_spiculation = [ann.spiculation for ann in nodule]
+    spiculation = np.mean(list_of_spiculation)
+
+    list_of_malignancy = [ann.malignancy for ann in nodule]
+    malignancy = np.mean(list_of_malignancy)
+
+    point = np.array([
+        width,
+        height,
+        subtlety,
+        lobulation,
+        spiculation,
+        malignancy
+    ])
+
+    label = kmeans.predict(point.reshape(1, -1))
+
+    return label[0]
 
 
 def create_annotations():
@@ -40,9 +47,6 @@ def create_annotations():
         if os.path.isdir(f"../pre-processing/data/Image/{patient_id}"):
             nodules = scan.cluster_annotations()
             for nodule in nodules:
-                label = calculate_malignancy(nodule)
-                if int(label) != 1:
-                    continue
                 try:
                     mask_list = nodule_to_masks(nodule)
                     for slice, mask in mask_list.items():
@@ -52,6 +56,11 @@ def create_annotations():
                             out_string = ""
                             for i in range(len(x)):
                                 out_string += f",{x[i]},{y[i]}"
+
+                            width = np.max(x) - np.min(x)
+                            height = np.max(y) - np.min(y)
+
+                            label = calculate_label(nodule, width, height)
                             slices[f"{patient_id}_slice_{slice}"].append({'polygon': out_string[1:], 'label': label})
                 except:
                     pass
@@ -78,4 +87,5 @@ def create_annotations():
 
 
 if __name__ == "__main__":
+    kmeans: KMeans = pickle.load(open("kmeans.pkl", "rb"))
     create_annotations()
